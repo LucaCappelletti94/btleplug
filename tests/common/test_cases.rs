@@ -114,7 +114,7 @@ pub async fn test_clear_peripherals_rediscovers_device() {
     adapter.start_scan(ScanFilter::default()).await.unwrap();
     time::timeout(Duration::from_secs(15), async {
         loop {
-            if matches!(events.next().await, Some(CentralEvent::DeviceDiscovered(id)) if id == peripheral_id)
+            if matches!(events.next().await, Some(Ok(CentralEvent::DeviceDiscovered(id))) if id == peripheral_id)
             {
                 break;
             }
@@ -285,6 +285,8 @@ pub async fn test_advertisement_manufacturer_data() {
     loop {
         tokio::select! {
             Some(event) = events.next() => {
+                // Advertisements repeat, so a skipped one is seen again.
+                let Ok(event) = event else { continue };
                 if let CentralEvent::ManufacturerDataAdvertisement { manufacturer_data, .. } = event {
                     if manufacturer_data.contains_key(&gatt_uuids::MANUFACTURER_COMPANY_ID) {
                         found_manufacturer_data = true;
@@ -320,6 +322,8 @@ pub async fn test_advertisement_services() {
     loop {
         tokio::select! {
             Some(event) = events.next() => {
+                // Advertisements repeat, so a skipped one is seen again.
+                let Ok(event) = event else { continue };
                 if let CentralEvent::ServicesAdvertisement { services, .. } = event {
                     if services.contains(&gatt_uuids::CONTROL_SERVICE) {
                         found_services = true;

@@ -4,6 +4,8 @@
 
 - **`Peripheral::notifications()`**: Items are now `Result<ValueNotification>`,
   so lost or unreadable notifications reach the caller as `Err`.
+- **`Central::events()`**: Items are now `Result<CentralEvent>`, so skipped
+  events reach the caller as `Err(Error::Lagged)`.
 - **`Error` enum**: New variant `Lagged(u64)`, the number of items a stream
   skipped. Exhaustive matches will need updating.
 
@@ -13,6 +15,9 @@
   when the Java stream failed on every poll.
 - Fix macOS and Windows `notifications()` silently skipping notifications when
   more than 16 were queued. They are reported as `Error::Lagged`.
+- Fix macOS, Windows and Android `events()` silently skipping events,
+  including `DeviceConnected` and `DeviceDisconnected`, when more than 16 were
+  queued. They are reported as `Error::Lagged`.
 
 # 0.13.4 (2026-10-03)
 

@@ -5,15 +5,16 @@
 // Licensed under the BSD 3-Clause license. See LICENSE file in the project root
 // for full license information.
 
-use crate::{Error, Result, api::ValueNotification};
+use crate::{Error, Result};
 use futures::stream::{Stream, StreamExt};
 use std::pin::Pin;
 use tokio::sync::broadcast::Receiver;
 use tokio_stream::wrappers::{BroadcastStream, errors::BroadcastStreamRecvError};
 
-pub fn notifications_stream_from_broadcast_receiver(
-    receiver: Receiver<ValueNotification>,
-) -> Pin<Box<dyn Stream<Item = Result<ValueNotification>> + Send>> {
+/// Streams a broadcast receiver, reporting skipped values as [`Error::Lagged`].
+pub fn broadcast_stream<T: Clone + Send + 'static>(
+    receiver: Receiver<T>,
+) -> Pin<Box<dyn Stream<Item = Result<T>> + Send>> {
     Box::pin(BroadcastStream::new(receiver).map(|item| {
         item.map_err(|BroadcastStreamRecvError::Lagged(skipped)| Error::Lagged(skipped))
     }))
@@ -21,7 +22,7 @@ pub fn notifications_stream_from_broadcast_receiver(
 
 #[cfg(test)]
 mod tests {
-    use super::notifications_stream_from_broadcast_receiver;
+    use super::broadcast_stream;
     use crate::Error;
     use crate::api::ValueNotification;
     use futures::stream::StreamExt;
@@ -39,7 +40,7 @@ mod tests {
     #[tokio::test]
     async fn lagged_receiver_reports_skipped_count_then_resumes() {
         let (sender, receiver) = broadcast::channel(2);
-        let stream = notifications_stream_from_broadcast_receiver(receiver);
+        let stream = broadcast_stream(receiver);
         for value in 0..5 {
             sender.send(notification(value)).unwrap();
         }

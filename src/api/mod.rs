@@ -415,7 +415,7 @@ pub trait Peripheral: Send + Sync + Clone + Debug {
     /// is made.
     ///
     /// `Err` items report lost or unreadable notifications, such as
-    /// [`Error::NotificationsLagged`](crate::Error::NotificationsLagged). The stream continues.
+    /// [`Error::Lagged`](crate::Error::Lagged). The stream continues.
     async fn notifications(
         &self,
     ) -> Result<Pin<Box<dyn Stream<Item = Result<ValueNotification>> + Send>>>;

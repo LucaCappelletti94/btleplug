@@ -15,9 +15,7 @@ pub fn notifications_stream_from_broadcast_receiver(
     receiver: Receiver<ValueNotification>,
 ) -> Pin<Box<dyn Stream<Item = Result<ValueNotification>> + Send>> {
     Box::pin(BroadcastStream::new(receiver).map(|item| {
-        item.map_err(|BroadcastStreamRecvError::Lagged(skipped)| {
-            Error::NotificationsLagged(skipped)
-        })
+        item.map_err(|BroadcastStreamRecvError::Lagged(skipped)| Error::Lagged(skipped))
     }))
 }
 
@@ -50,7 +48,7 @@ mod tests {
         let items: Vec<_> = stream.collect().await;
 
         assert_eq!(items.len(), 3);
-        assert!(matches!(items[0], Err(Error::NotificationsLagged(3))));
+        assert!(matches!(items[0], Err(Error::Lagged(3))));
         let delivered: Vec<u8> = items[1..]
             .iter()
             .map(|item| item.as_ref().unwrap().value[0])
